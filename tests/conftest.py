@@ -44,7 +44,7 @@ from tests.common.helpers.constants import (
     ASICS_PRESENT, DUT_CHECK_NAMESPACE
 )
 from tests.common.helpers.custom_msg_utils import add_custom_msg
-from tests.common.helpers.dut_ports import encode_dut_port_name
+from tests.common.helpers.dut_ports import encode_dut_port_name, decode_dut_port_name, get_duthost_with_name
 from tests.common.helpers.dut_utils import encode_dut_and_container_name
 from tests.common.helpers.parallel_utils import InitialCheckState, InitialCheckStatus
 from tests.common.helpers.pfcwd_helper import TrafficPorts, select_test_ports, set_pfc_timers
@@ -57,7 +57,7 @@ from tests.common.utilities import get_test_server_host
 from tests.common.utilities import str2bool
 from tests.common.utilities import safe_filename
 from tests.common.utilities import get_duts_from_host_pattern
-from tests.common.utilities import get_upstream_neigh_type, file_exists_on_dut
+from tests.common.utilities import get_upstream_neigh_type, file_exists_on_dut, wait_until
 from tests.common.helpers.dut_utils import is_supervisor_node, is_frontend_node, create_duthost_console, creds_on_dut, \
     is_enabled_nat_for_dpu, get_dpu_names_and_ssh_ports, enable_nat_for_dpus, is_macsec_capable_node
 from tests.common.cache import FactsCache
@@ -3116,6 +3116,7 @@ def gnxi_path(ptfhost):
     return gnxipath
 
 
+<<<<<<< ours
 @pytest.fixture(scope="module")
 def selected_asic_index(request):
     asic_index = DEFAULT_ASIC_ID
@@ -3355,3 +3356,87 @@ def restore_golden_config_db(duthost):
 def gnmi_connection(request, setup_connection):
     connection = setup_connection
     yield connection
+=======
+@pytest.fixture(scope='function')
+def start_platform_api_service(duthosts, enum_rand_one_per_hwsku_hostname, localhost, request):
+    duthost = duthosts[enum_rand_one_per_hwsku_hostname]
+    dut_ip = duthost.mgmt_ip
+
+    res = localhost.wait_for(host=dut_ip,
+                             port=SERVER_PORT,
+                             state='started',
+                             delay=1,
+                             timeout=10,
+                             module_ignore_errors=True)
+    if res['failed'] is True:
+
+        res = duthost.command('docker exec -i pmon python3 -c "import sonic_platform"', module_ignore_errors=True)
+        py3_platform_api_available = not res['failed']
+
+        supervisor_conf = [
+            '[program:platform_api_server]',
+            'command=/usr/bin/python{} /opt/platform_api_server.py --port {}'.format('3' if py3_platform_api_available
+                                                                                     else '2', SERVER_PORT),
+            'autostart=True',
+            'autorestart=True',
+            'stdout_logfile=syslog',
+            'stderr_logfile=syslog',
+        ]
+        dest_path = os.path.join(os.sep, 'tmp', 'platform_api_server.conf')
+        pmon_path = os.path.join(os.sep, 'etc', 'supervisor', 'conf.d', 'platform_api_server.conf')
+        duthost.copy(content='\n'.join(supervisor_conf), dest=dest_path)
+        duthost.command('docker cp {} pmon:{}'.format(dest_path, pmon_path))
+
+        src_path = os.path.join('common', 'helpers', 'platform_api', 'scripts', SERVER_FILE)
+        dest_path = os.path.join(os.sep, 'tmp', SERVER_FILE)
+        pmon_path = os.path.join(os.sep, 'opt', SERVER_FILE)
+        duthost.copy(src=src_path, dest=dest_path)
+        duthost.command('docker cp {} pmon:{}'.format(dest_path, pmon_path))
+
+        # Prepend an iptables rule to allow incoming traffic to the HTTP server
+        duthost.command(IPTABLES_PREPEND_RULE_CMD)
+
+        # Reload the supervisor config and Start the HTTP server
+        duthost.command('docker exec -i pmon supervisorctl reread')
+        duthost.command('docker exec -i pmon supervisorctl update')
+
+        res = localhost.wait_for(host=dut_ip, port=SERVER_PORT, state='started', delay=1, timeout=10)
+        assert res['failed'] is False
+
+
+def config_and_delete_multip_process(host, config_mode):
+    if config_mode:
+        host.shell('sonic-db-cli CONFIG_DB hset "TEAMD|GLOBAL" "mode" "multi-process"', module_ignore_errors=True)
+    else:
+        host.shell('sonic-db-cli CONFIG_DB hdel "TEAMD|GLOBAL" "mode"', module_ignore_errors=True)
+    try:
+        host.restart_service("swss")
+    except TypeError:
+        host.shell("sudo systemctl restart swss", module_ignore_errors=True)
+    logger.info("Waiting 120 seconds for config reload to take effect...")
+    wait_until(60, 5, 0, host.critical_services_fully_started)
+    wait_until(60, 5, 0, host.critical_processes_running, "teamd")
+
+
+@pytest.fixture
+def teamd_mode_config_unconfig(request, teamd_mode):
+    if "enum_rand_one_per_hwsku_frontend_hostname" in request.fixturenames:
+        duthosts = request.getfixturevalue("duthosts")
+        duthost = duthosts[request.getfixturevalue("enum_rand_one_per_hwsku_frontend_hostname")]
+    elif "enum_dut_portchannel_with_completeness_level" in request.fixturenames:
+        duthosts = request.getfixturevalue("duthosts")
+        dut_name, dut_lag = decode_dut_port_name(
+                                   request.getfixturevalue("enum_dut_portchannel_with_completeness_level"))
+        duthost = get_duthost_with_name(duthosts, dut_name)
+    elif "duthost" in request.fixturenames:
+        duthost = request.getfixturevalue("duthost")
+
+    if duthost is None:
+        pytest.fail("DUT host not found")
+
+    if teamd_mode == "multi_process":
+        config_and_delete_multip_process(duthost, True)
+
+    yield "teamd-mode"
+    if teamd_mode == "multi_process":
+        config_and_delete_multip_process(duthost, False)
