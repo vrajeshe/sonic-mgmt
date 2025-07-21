@@ -9,13 +9,15 @@ from tests.common.config_reload import config_reload
 from tests.common.utilities import wait_until
 from scapy.all import Packet, ByteField, ShortField, MACField, XStrFixedLenField, ConditionalField, MultipleTypeField
 from scapy.all import split_layers, bind_layers, rdpcap
+from tests.conftest import config_and_delete_multip_process
 import scapy.contrib.lacp
 import scapy.layers.l2
 
 logger = logging.getLogger(__name__)
 
 pytestmark = [
-    pytest.mark.topology("t0", "t1", "t0-sonic")
+    pytest.mark.topology("t0", "t1", "t0-sonic"),
+    pytest.mark.parametrize("teamd_mode", ["unified", "multi_process"])
 ]
 
 
@@ -73,10 +75,13 @@ def verify_retry_count(hosts, expected_retry_count):
     return True
 
 
-@pytest.fixture(scope="class")
-def higher_retry_count_on_peers(request, duthost, nbrhosts):
+@pytest.fixture(scope="function")
+def higher_retry_count_on_peers(request, duthost, nbrhosts, teamd_mode):
     if request.config.getoption("neighbor_type") != "sonic":
         pytest.skip("Only supported with SONiC neighbor")
+
+    if teamd_mode == "multi_process":
+        config_and_delete_multip_process(duthost, True)
 
     featureCheckResult = nbrhosts[list(nbrhosts.keys())[0]]['host'].shell(
             "sudo config portchannel retry-count get PortChannel1", module_ignore_errors=True)
@@ -99,11 +104,17 @@ def higher_retry_count_on_peers(request, duthost, nbrhosts):
     pytest_assert(wait_until(90, 5, 0, verify_retry_count, [duthost], 3),
                   "Retry count on DUT has not been changed to 3.")
 
+    if teamd_mode == "multi_process":
+        config_and_delete_multip_process(duthost, False)
 
-@pytest.fixture(scope="class")
-def higher_retry_count_on_dut(request, duthost, nbrhosts):
+
+@pytest.fixture(scope="function")
+def higher_retry_count_on_dut(request, duthost, nbrhosts, teamd_mode):
     if request.config.getoption("neighbor_type") != "sonic":
         pytest.skip("Only supported with SONiC neighbor")
+
+    if teamd_mode == "multi_process":
+        config_and_delete_multip_process(duthost, True)
 
     cfg_facts = duthost.config_facts(host=duthost.hostname, source="running")["ansible_facts"]
 
@@ -127,6 +138,9 @@ def higher_retry_count_on_dut(request, duthost, nbrhosts):
     # Wait for retry count info to be updated
     pytest_assert(wait_until(90, 5, 0, verify_retry_count, [nbrhosts[nbr]['host'] for nbr in nbrhosts], 3),
                   "Retry count on neighbors has not been changed to 3.")
+
+    if teamd_mode == "multi_process":
+        config_and_delete_multip_process(duthost, False)
 
 
 @pytest.fixture(scope="function")
@@ -231,7 +245,7 @@ def disable_retry_count_on_dut(duthost, nbrhosts, higher_retry_count_on_dut, col
 
 
 class TestNeighborRetryCount:
-    def test_peer_retry_count(self, duthost, nbrhosts, higher_retry_count_on_peers):
+    def test_peer_retry_count(self, duthost, nbrhosts, teamd_mode, higher_retry_count_on_peers):
         """
         Test that DUT sees new retry count when peers update retry count.
         """
@@ -254,13 +268,15 @@ class TestNeighborRetryCount:
                               "partner retry count is incorrect; expected 5, but is {}"
                               .format(status["runner"]["partner_retry_count"]))
 
-    def test_peer_retry_count_packet_version(self, duthost, nbrhosts, higher_retry_count_on_peers, scapy_lacp_layer):
+    def test_peer_retry_count_packet_version(self, duthost, nbrhosts, teamd_mode,
+                                             higher_retry_count_on_peers, scapy_lacp_layer):
         """
         Test that peers and DUT use new LACPDU version when peers use a non-standard retry count
         """
         check_lacpdu_packet_version(duthost)
 
-    def test_kill_team_lag_up(self, duthost, nbrhosts, higher_retry_count_on_peers, config_reload_on_cleanup):
+    def test_kill_team_lag_up(self, duthost, nbrhosts, teamd_mode,
+                              higher_retry_count_on_peers, config_reload_on_cleanup):
         """
         Test that the lag remains up for 150 seconds after killing teamd on the peer
         """
@@ -291,8 +307,8 @@ class TestNeighborRetryCount:
                 pytest_assert(not status["runner"]["selected"], "lag member is still up")
 
 
-def test_peer_retry_count_disabled(duthost, nbrhosts, higher_retry_count_on_peers, disable_retry_count_on_peer,
-                                   collect_techsupport_all_nbrs):
+def test_peer_retry_count_disabled(duthost, nbrhosts, teamd_mode, higher_retry_count_on_peers,
+                                   disable_retry_count_on_peer, collect_techsupport_all_nbrs):
     """
     Test that peers reset the retry count to 3 when the feature is disabled
     """
@@ -313,7 +329,7 @@ def test_peer_retry_count_disabled(duthost, nbrhosts, higher_retry_count_on_peer
 
 
 class TestDutRetryCount:
-    def test_retry_count(self, duthost, nbrhosts, higher_retry_count_on_dut):
+    def test_retry_count(self, duthost, nbrhosts, teamd_mode, higher_retry_count_on_dut):
         """
         Test that peers see new retry count when DUT updates retry count.
         """
@@ -333,13 +349,15 @@ class TestDutRetryCount:
                               "partner retry count is incorrect; expected 5, but is {}"
                               .format(status["runner"]["partner_retry_count"]))
 
-    def test_retry_count_packet_version(self, duthost, nbrhosts, higher_retry_count_on_dut, scapy_lacp_layer):
+    def test_retry_count_packet_version(self, duthost, nbrhosts, teamd_mode,
+                                        higher_retry_count_on_dut, scapy_lacp_layer):
         """
         Test that peers and DUT use new LACPDU version when DUT uses a non-standard retry count
         """
         check_lacpdu_packet_version(duthost)
 
-    def test_kill_team_peer_lag_up(self, duthost, nbrhosts, higher_retry_count_on_peers, config_reload_on_cleanup):
+    def test_kill_team_peer_lag_up(self, duthost, nbrhosts, teamd_mode,
+                                   higher_retry_count_on_dut, config_reload_on_cleanup):
         """
         Test that the lag remains up for 150 seconds after killing teamd on the DUT
         """
@@ -365,8 +383,8 @@ class TestDutRetryCount:
                 pytest_assert(not status["runner"]["selected"], "lag member is still up")
 
 
-def test_dut_retry_count_disabled(duthost, nbrhosts, higher_retry_count_on_dut, disable_retry_count_on_dut,
-                                  collect_techsupport_all_nbrs):
+def test_dut_retry_count_disabled(duthost, nbrhosts, teamd_mode, higher_retry_count_on_dut,
+                                  disable_retry_count_on_dut, collect_techsupport_all_nbrs):
     """
     Test that DUT resets the retry count to 3 when the feature is disabled
     """

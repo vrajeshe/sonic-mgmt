@@ -20,7 +20,8 @@ from tests.common.helpers.voq_helpers import verify_no_routes_from_nexthop
 
 pytestmark = [
     pytest.mark.topology('any'),
-    pytest.mark.device_type('vs')
+    pytest.mark.device_type('vs'),
+    pytest.mark.parametrize("teamd_mode", ["unified", "multi_process"])
 ]
 
 
@@ -81,7 +82,8 @@ def pc_active(asichost, portchannel):
     return asichost.interface_facts()['ansible_facts']['ansible_interface_facts'][portchannel]['active']
 
 
-def test_po_update(duthosts, enum_rand_one_per_hwsku_frontend_hostname, enum_frontend_asic_index, tbinfo):
+def test_po_update(duthosts, enum_rand_one_per_hwsku_frontend_hostname, enum_frontend_asic_index,
+                   tbinfo, teamd_mode, teamd_mode_config_unconfig):
     """
     test port channel add/deletion as well ip address configuration
     """
@@ -191,7 +193,8 @@ def test_po_update_io_no_loss(
         enum_frontend_asic_index,
         tbinfo,
         ptfadapter,
-        reload_testbed_on_failed):
+        reload_testbed_on_failed, teamd_mode,
+        teamd_mode_config_unconfig):
     # GIVEN a lag topology, keep sending packets between 2 port channels
     # WHEN delete/add different members of a port channel
     # THEN no packets shall loss
@@ -503,7 +506,8 @@ def test_po_update_with_higher_lagids(
         enum_rand_one_per_hwsku_frontend_hostname,
         tbinfo,
         ptfadapter,
-        reload_testbed_on_failed, localhost):
+        reload_testbed_on_failed, localhost, teamd_mode,
+        teamd_mode_config_unconfig):
     """
     Test Port Channel Traffic with Higher LAG IDs:
 
