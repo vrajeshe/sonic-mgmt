@@ -717,7 +717,7 @@ def test_dhcp_relay_unicast_mac(ptfhost, dut_dhcp_relay_data, validate_dut_route
                    is_python3=True)
 
 
-@pytest.mark.parametrize("relay_agent", ["isc-relay-agent"])
+@pytest.mark.parametrize("relay_agent", ["isc-relay-agent", "sonic-relay-agent"])
 def test_dhcp_relay_random_sport(ptfhost, dut_dhcp_relay_data, validate_dut_routes_exist, testing_config,
                                  setup_standby_ports_on_rand_unselected_tor,				 # noqa F811
                                  toggle_all_simulator_ports_to_rand_selected_tor_m,     # noqa F811
