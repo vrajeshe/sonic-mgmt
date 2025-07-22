@@ -378,10 +378,10 @@ def test_dhcp_relay_default(ptfhost, dut_dhcp_relay_data, validate_dut_routes_ex
                     ) % (dhcp_relay['downlink_vlan_iface']['name'], dhcp_server_num, dhcp_server_num)
                 else:
                     expected_agg_counter_message = (
-                        r".*dhcp_relay#dhcpmon\[[0-9]+\]:\s+"
-                        r"\[\s*Agg-%s\s*-[\sA-Za-z0-9]+\s*rx/tx\]\s+"
-                        r"Discover:\s+2/\s+%d,\s+Offer:\s+1/\s+1,\s+Request:\s+2/\s+%d,\s+ACK:\s+1/\s+1"
-                    ) % (dhcp_relay['downlink_vlan_iface']['name'], dhcp_server_num * 2, dhcp_server_num * 2)
+                        r".*dhcp_relay#dhcpmon\[[0-9]+\]: "
+                        r"\[\s*Agg-%s\s*-[\sA-Za-z0-9]+\s*rx/tx\] "
+                        r"Discover: +1/ +%d, Offer: +1/ +1, Request: +2/ +%d, ACK: +1/ +1+"
+                    ) % (dhcp_relay['downlink_vlan_iface']['name'], dhcp_server_num, dhcp_server_num * 2)
                 loganalyzer = LogAnalyzer(ansible_host=duthost, marker_prefix="dhcpmon counter")
                 marker = loganalyzer.init()
                 loganalyzer.expect_regex = [expected_agg_counter_message]
@@ -488,10 +488,10 @@ def test_dhcp_relay_with_source_port_ip_in_relay_enabled(ptfhost, dut_dhcp_relay
                     ) % (dhcp_relay['downlink_vlan_iface']['name'], dhcp_server_num, dhcp_server_num)
                 else:
                     expected_agg_counter_message = (
-                        r".*dhcp_relay#dhcpmon\[[0-9]+\]:\s+"
-                        r"\[\s*Agg-%s\s*-[\sA-Za-z0-9]+\s*rx/tx\]\s+"
-                        r"Discover:\s+2/\s+%d,\s+Offer:\s+1/\s+1,\s+Request:\s+2/\s+%d,\s+ACK:\s+1/\s+1"
-                    ) % (dhcp_relay['downlink_vlan_iface']['name'], dhcp_server_num * 2, dhcp_server_num * 2)
+                        r".*dhcp_relay#dhcpmon\[[0-9]+\]: "
+                        r"\[\s*Agg-%s\s*-[\sA-Za-z0-9]+\s*rx/tx\] "
+                        r"Discover: +1/ +%d, Offer: +1/ +1, Request: +2/ +%d, ACK: +1/ +1+"
+                    ) % (dhcp_relay['downlink_vlan_iface']['name'], dhcp_server_num, dhcp_server_num * 2)
                 loganalyzer = LogAnalyzer(ansible_host=duthost, marker_prefix="dhcpmon counter")
                 marker = loganalyzer.init()
                 loganalyzer.expect_regex = [expected_agg_counter_message]
@@ -940,9 +940,8 @@ def test_dhcp_relay_option82_suboptions(ptfhost, dut_dhcp_relay_data, validate_d
 @pytest.mark.parametrize("relay_agent", ["sonic-relay-agent"])
 @pytest.mark.parametrize("test_mode", [
                                     "discard",
-                                    "forward_untouched",
-                                    "forward_and_replace",
-                                    "forward_and_append"
+                                    "replace",
+                                    "append"
                                 ])
 def test_dhcp_relay_agent_mode(ptfhost, dut_dhcp_relay_data, validate_dut_routes_exist, testing_config,
                                setup_standby_ports_on_rand_unselected_tor,
@@ -970,8 +969,8 @@ def test_dhcp_relay_agent_mode(ptfhost, dut_dhcp_relay_data, validate_dut_routes
     """
 
     agent_relay_mode = True
-    agent_relay_discard_mode = agent_relay_forward_and_append_mode = None
-    agent_relay_forward_and_replace_mode = agent_relay_forward_untouched_mode = None
+    agent_relay_discard_mode = agent_relay_append_mode = None
+    agent_relay_replace_mode = None
     testing_mode, duthost = testing_config
 
     try:
@@ -987,12 +986,10 @@ def test_dhcp_relay_agent_mode(ptfhost, dut_dhcp_relay_data, validate_dut_routes
 
             if test_mode == "discard":
                 agent_relay_discard_mode = True
-            elif test_mode == "forward_untouched":
-                agent_relay_forward_untouched_mode = True
-            elif test_mode == "forward_and_replace":
-                agent_relay_forward_and_replace_mode = True
-            elif test_mode == "forward_and_append":
-                agent_relay_forward_and_append_mode = True
+            elif test_mode == "replace":
+                agent_relay_replace_mode = True
+            elif test_mode == "append":
+                agent_relay_append_mode = True
 
             # Run PTF test with current mode
             ptf_runner(
@@ -1019,9 +1016,8 @@ def test_dhcp_relay_agent_mode(ptfhost, dut_dhcp_relay_data, validate_dut_routes
                     "kvm_support": True,
                     "relay_agent": relay_agent,
                     "agent_relay_discard_mode": agent_relay_discard_mode,
-                    "agent_relay_forward_untouched_mode": agent_relay_forward_untouched_mode,
-                    "agent_relay_forward_and_replace_mode": agent_relay_forward_and_replace_mode,
-                    "agent_relay_forward_and_append_mode": agent_relay_forward_and_append_mode,
+                    "agent_relay_replace_mode": agent_relay_replace_mode,
+                    "agent_relay_append_mode": agent_relay_append_mode,
                     "agent_relay_mode": agent_relay_mode,
                     "downlink_vlan_iface_name": str(dhcp_relay['downlink_vlan_iface']['name']),
                 },

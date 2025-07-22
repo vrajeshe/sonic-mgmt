@@ -173,9 +173,8 @@ class DHCPTest(DataplaneBaseTest):
         self.portchannels_ip_list = self.test_params.get('portchannels_ip_list', None)
         self.agent_relay_mode = self.test_params.get('agent_relay_mode', None)
         self.agent_relay_discard_mode = self.test_params.get('agent_relay_discard_mode', None)
-        self.agent_relay_forward_and_append_mode = self.test_params.get('agent_relay_forward_and_append_mode', None)
-        self.agent_relay_forward_and_replace_mode = self.test_params.get('agent_relay_forward_and_replace_mode', None)
-        self.agent_relay_forward_untouched_mode = self.test_params.get('agent_relay_forward_untouched_mode', None)
+        self.agent_relay_append_mode = self.test_params.get('agent_relay_append_mode', None)
+        self.agent_relay_replace_mode = self.test_params.get('agent_relay_replace_mode', None)
         self.client_vrf = self.test_params.get('client_vrf', None)
         self.dhcpv4_disable_flag = self.test_params.get('dhcpv4_disable_flag', None)
         if self.relay_agent == "sonic-relay-agent":
@@ -237,7 +236,7 @@ class DHCPTest(DataplaneBaseTest):
             #  Byte 0: Suboption number, always set to 151
             #  Byte 1: Length of VRF name + 1 (to pad with a null byte)
             #  Bytes 2+: Null byte followed by the UTF-8 encoded VRF name
-            if self.server_vrf or self.vrf_selection:
+            if self.server_vrf:
                 vrf_data = self.client_vrf
                 vrf_bytes = '\x00' + vrf_data
                 self.option82 += struct.pack('BB', self.VRF_NAME_SUBOPTION, len(vrf_bytes))
@@ -348,28 +347,10 @@ class DHCPTest(DataplaneBaseTest):
         if self.agent_relay_discard_mode:
             dhcp_options = [('message-type', 'discover'), (82, self.option82), ('end')]
 
-        elif self.agent_relay_forward_untouched_mode:
-            # Circuit ID sub-option type 1, length 7, data 'Vlan100'
-            circuit_id = b'\x01' + bytes([7]) + b'Vlan100'
-
-            # Sub-option 2: Remote ID (MAC address)
-            # Remote ID sub-option type 2, length 6, MAC address
-            remote_id = b'\x02' + bytes([6]) + bytes.fromhex("112233445566")
-
-            # Create two separate Option 82 entries (client and relay)
-            relay_option82 = circuit_id + remote_id  # Combine the new sub-options for relay
-
-            # Construct DHCP options with both client and relay Option 82
-            dhcp_options = [
-                ('message-type', 'discover'),
-                (82, relay_option82),   # New Option 82 from the relay
-                ('end')
-            ]
-
-        elif self.agent_relay_forward_and_replace_mode:
+        elif self.agent_relay_replace_mode:
             dhcp_options = [('message-type', 'discover'), (82, self.option82), ('end')]
 
-        elif self.agent_relay_forward_and_append_mode:
+        elif self.agent_relay_append_mode:
             # Sub-option 1: Circuit ID (VLAN 100)
             # Circuit ID sub-option type 1, length 7, data 'Vlan100'
             circuit_id = b'\x01' + bytes([7]) + b'Vlan100'
