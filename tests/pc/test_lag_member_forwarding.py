@@ -12,7 +12,8 @@ from tests.common.helpers.assertions import pytest_assert
 logger = logging.getLogger(__name__)
 
 pytestmark = [
-    pytest.mark.topology('any')
+    pytest.mark.topology('any'),
+    pytest.mark.parametrize("teamd_mode", ["unified", "multi_process"]),
 ]
 
 
@@ -69,7 +70,9 @@ def build_pkt(dest_mac, ip_addr, ttl):
     return pkt, exp_packet
 
 
-def test_lag_member_forwarding_packets(duthosts, enum_rand_one_per_hwsku_frontend_hostname, tbinfo, ptfadapter):
+def test_lag_member_forwarding_packets(duthosts, enum_rand_one_per_hwsku_frontend_hostname,
+                                       tbinfo, ptfadapter, teamd_mode, teamd_mode_config_unconfig):
+
     duthost = duthosts[enum_rand_one_per_hwsku_frontend_hostname]
     mg_facts = duthost.get_extended_minigraph_facts(tbinfo)
     lag_facts = duthost.lag_facts(host=duthost.hostname)['ansible_facts']['lag_facts']

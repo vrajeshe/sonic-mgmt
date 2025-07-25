@@ -44,7 +44,7 @@ from tests.common.helpers.constants import (
     ASICS_PRESENT, DUT_CHECK_NAMESPACE
 )
 from tests.common.helpers.custom_msg_utils import add_custom_msg
-from tests.common.helpers.dut_ports import encode_dut_port_name
+from tests.common.helpers.dut_ports import encode_dut_port_name, decode_dut_port_name, get_duthost_with_name
 from tests.common.helpers.dut_utils import encode_dut_and_container_name
 from tests.common.helpers.parallel_utils import InitialCheckState, InitialCheckStatus
 from tests.common.helpers.pfcwd_helper import TrafficPorts, select_test_ports, set_pfc_timers
@@ -60,6 +60,7 @@ from tests.common.utilities import get_duts_from_host_pattern
 from tests.common.utilities import get_upstream_neigh_type, file_exists_on_dut
 from tests.common.helpers.dut_utils import is_supervisor_node, is_frontend_node, create_duthost_console, creds_on_dut, \
     is_enabled_nat_for_dpu, get_dpu_names_and_ssh_ports, enable_nat_for_dpus, is_macsec_capable_node
+from tests.common.utilities import wait_until
 from tests.common.cache import FactsCache
 from tests.common.config_reload import config_reload
 from tests.common.helpers.assertions import pytest_assert as pt_assert
@@ -3371,3 +3372,41 @@ def restore_golden_config_db(duthost):
 def gnmi_connection(request, setup_connection):
     connection = setup_connection
     yield connection
+
+
+def config_and_delete_multip_process(host, config_mode):
+    if config_mode:
+        host.shell('sonic-db-cli CONFIG_DB hset "TEAMD|GLOBAL" "mode" "multi-process"', module_ignore_errors=True)
+    else:
+        host.shell('sonic-db-cli CONFIG_DB hdel "TEAMD|GLOBAL" "mode"', module_ignore_errors=True)
+    try:
+        host.restart_service("swss")
+    except TypeError:
+        host.shell("sudo systemctl restart swss", module_ignore_errors=True)
+    logger.info("Waiting 120 seconds for config reload to take effect...")
+    wait_until(60, 5, 0, host.critical_services_fully_started)
+    wait_until(60, 5, 0, host.critical_processes_running, "teamd")
+
+
+@pytest.fixture
+def teamd_mode_config_unconfig(request, teamd_mode):
+    if "enum_rand_one_per_hwsku_frontend_hostname" in request.fixturenames:
+        duthosts = request.getfixturevalue("duthosts")
+        duthost = duthosts[request.getfixturevalue("enum_rand_one_per_hwsku_frontend_hostname")]
+    elif "enum_dut_portchannel_with_completeness_level" in request.fixturenames:
+        duthosts = request.getfixturevalue("duthosts")
+        dut_name, dut_lag = decode_dut_port_name(
+                                   request.getfixturevalue("enum_dut_portchannel_with_completeness_level"))
+        duthost = get_duthost_with_name(duthosts, dut_name)
+    elif "duthost" in request.fixturenames:
+        duthost = request.getfixturevalue("duthost")
+
+    if duthost is None:
+        pytest.fail("DUT host not found")
+
+    if teamd_mode == "multi_process":
+        config_and_delete_multip_process(duthost, True)
+
+    yield "teamd-mode"
+    if teamd_mode == "multi_process":
+        config_and_delete_multip_process(duthost, False)

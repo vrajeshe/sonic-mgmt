@@ -17,7 +17,8 @@ from tests.common.config_reload import config_reload
 logger = logging.getLogger(__name__)
 
 pytestmark = [
-    pytest.mark.topology("t0")
+    pytest.mark.topology("t0"),
+    pytest.mark.parametrize("teamd_mode", ["unified", "multi_process"]),
 ]
 
 # TODO: Remove this once we no longer support Python 2
@@ -413,7 +414,8 @@ def check_arp(duthost, port_name, ip_address):
     return False
 
 
-def test_lag_member_status(duthost, most_common_port_speed, ptf_dut_setup_and_teardown):
+def test_lag_member_status(duthost, most_common_port_speed, ptf_dut_setup_and_teardown,
+                           teamd_mode, teamd_mode_config_unconfig):
     """
     Test ports' status of members in a lag
 
@@ -421,6 +423,7 @@ def test_lag_member_status(duthost, most_common_port_speed, ptf_dut_setup_and_te
         1.) Setup DUT and PTF
         2.) Get status of port channel new added and verify number of member and members' status is correct
     """
+    # Test state_db status for lag interfaces
     port_channel_status = duthost.get_port_channel_status(DUT_LAG_NAME)
     dut_hwsku = duthost.facts["hwsku"]
     number_of_lag_member = HWSKU_INTF_NUMBERS_DICT.get(dut_hwsku, DEAFULT_NUMBER_OF_MEMBER_IN_LAG)
@@ -462,7 +465,8 @@ def run_lag_member_traffic_test(duthost, dut_vlan, ptf_ports, ptfhost):
     ptf_runner(ptfhost, 'acstests', "lag_test.LagMemberTrafficTest", "/root/ptftests", params=params, is_python3=True)
 
 
-def test_lag_member_traffic(common_setup_teardown, duthost, ptf_dut_setup_and_teardown):
+def test_lag_member_traffic(common_setup_teardown, duthost, ptf_dut_setup_and_teardown,
+                            teamd_mode, teamd_mode_config_unconfig):
     """
     Test traffic about ports in a lag
 

@@ -9,7 +9,8 @@ import logging
 logger = logging.getLogger(__name__)
 
 pytestmark = [
-    pytest.mark.topology('t2')
+    pytest.mark.topology('t2'),
+    pytest.mark.parametrize("teamd_mode", ["unified", "multi_process"])
 ]
 
 
@@ -103,7 +104,7 @@ def setup_teardown(duthosts, enum_rand_one_per_hwsku_frontend_hostname):
         asic.config_portchannel_member(portchannel, portchannel_member, "add")
 
 
-def test_voq_po_update(duthosts, enum_rand_one_per_hwsku_frontend_hostname):
+def test_voq_po_update(duthosts, enum_rand_one_per_hwsku_frontend_hostname, teamd_mode, teamd_mode_config_unconfig):
     """Test to verify when a LAG is added/deleted via CLI, it is synced across all DBs
 
     All DBs = local app db, chassis app db, local & remote asic db
@@ -142,7 +143,8 @@ def test_voq_po_update(duthosts, enum_rand_one_per_hwsku_frontend_hostname):
             asic.config_portchannel(voq_lag.TMP_PC, "del")
 
 
-def test_voq_po_member_update(duthosts, enum_rand_one_per_hwsku_frontend_hostname, setup_teardown):
+def test_voq_po_member_update(duthosts, enum_rand_one_per_hwsku_frontend_hostname, setup_teardown,
+                              teamd_mode, teamd_mode_config_unconfig):
     """Test to verify when LAG members are added/deleted via CLI, it is synced across all DBs
 
     All DBs = local app db, chassis app db, local & remote asic db
@@ -184,7 +186,8 @@ def test_voq_po_member_update(duthosts, enum_rand_one_per_hwsku_frontend_hostnam
         asic.config_portchannel_member(voq_lag.TMP_PC, del_pc_member, "add")
 
 
-def test_voq_po_down_via_cli_update(duthosts, enum_rand_one_per_hwsku_frontend_hostname, setup_teardown):
+def test_voq_po_down_via_cli_update(duthosts, enum_rand_one_per_hwsku_frontend_hostname, setup_teardown,
+                                    teamd_mode, teamd_mode_config_unconfig):
     """Test to verify when a LAG goes down on an ASIC via CLI, it is synced across all DBs
 
     All DBs = local app db, chassis app db, local & remote asic db
@@ -228,7 +231,8 @@ def test_voq_po_down_via_cli_update(duthosts, enum_rand_one_per_hwsku_frontend_h
 
 @pytest.mark.parametrize("flap_method", ["local", "remote"])
 def test_voq_po_member_down_update(duthosts, enum_rand_one_per_hwsku_frontend_hostname,
-                                   setup_teardown, fanouthosts, flap_method):
+                                   setup_teardown, fanouthosts, flap_method, teamd_mode,
+                                   teamd_mode_config_unconfig):
     """
     Test to verify when a LAG member goes down on an ASIC, it is synced across all DBs
 
