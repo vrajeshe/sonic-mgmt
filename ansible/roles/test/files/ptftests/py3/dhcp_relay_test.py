@@ -127,6 +127,7 @@ class DHCPTest(DataplaneBaseTest):
     LINK_SELECTION_SUBOPTION = 5
     SERVER_ID_OVERRIDE_SUBOPTION = 11
     VRF_NAME_SUBOPTION = 151
+    MAX_HOP_COUNT = 16
 
     def __init__(self):
         DataplaneBaseTest.__init__(self)
@@ -172,9 +173,7 @@ class DHCPTest(DataplaneBaseTest):
         self.vrf_selection = self.test_params.get('vrf_selection', None)
         self.portchannels_ip_list = self.test_params.get('portchannels_ip_list', None)
         self.agent_relay_mode = self.test_params.get('agent_relay_mode', None)
-        self.agent_relay_discard_mode = self.test_params.get('agent_relay_discard_mode', None)
-        self.agent_relay_append_mode = self.test_params.get('agent_relay_append_mode', None)
-        self.agent_relay_replace_mode = self.test_params.get('agent_relay_replace_mode', None)
+        self.max_hop_count = self.test_params.get('max_hop_count', None)
         self.client_vrf = self.test_params.get('client_vrf', None)
         self.dhcpv4_disable_flag = self.test_params.get('dhcpv4_disable_flag', None)
         if self.relay_agent == "sonic-relay-agent":
@@ -294,7 +293,7 @@ class DHCPTest(DataplaneBaseTest):
             discover_packet[scapy.Ether].dst = self.uplink_mac
             discover_packet[scapy.IP].src = self.client_ip
             discover_packet[scapy.IP].dst = self.switch_loopback_ip
-            discover_packet[scapy.BOOTP].hops = 1
+            discover_packet[scapy.BOOTP].hops = self.max_hop_count if self.max_hop_count == self.MAX_HOP_COUNT else 1
             discover_packet[scapy.BOOTP].giaddr = self.switch_loopback_ip
             discover_packet[scapy.DHCP].options.insert(
                 discover_packet[scapy.DHCP].options.index("end"),
@@ -344,13 +343,13 @@ class DHCPTest(DataplaneBaseTest):
                         dport=self.DHCP_SERVER_PORT, len=308)
 
         # Relay-side behavior based on agent_mode
-        if self.agent_relay_discard_mode:
+        if self.agent_relay_mode == "discard":
             dhcp_options = [('message-type', 'discover'), (82, self.option82), ('end')]
 
-        elif self.agent_relay_replace_mode:
+        elif self.agent_relay_mode == "replace":
             dhcp_options = [('message-type', 'discover'), (82, self.option82), ('end')]
 
-        elif self.agent_relay_append_mode:
+        elif self.agent_relay_mode == "append":
             # Sub-option 1: Circuit ID (VLAN 100)
             # Circuit ID sub-option type 1, length 7, data 'Vlan100'
             circuit_id = b'\x01' + bytes([7]) + b'Vlan100'
@@ -375,10 +374,17 @@ class DHCPTest(DataplaneBaseTest):
                             (82, self.option82),
                             ('end')]
 
+        if self.max_hop_count == self.MAX_HOP_COUNT:
+            hops = 17
+        elif self.agent_relay_mode:
+            hops = 2
+        else:
+            hops = 1
+
         bootp = scapy.BOOTP(op=1,
                             htype=1,
                             hlen=6,
-                            hops=1 if not self.agent_relay_mode else 2,
+                            hops=hops,
                             xid=0,
                             secs=0,
                             flags=0x8000,
@@ -778,7 +784,7 @@ class DHCPTest(DataplaneBaseTest):
         discover_count = testutils.count_matched_packets_all_ports(
             self, masked_discover, self.server_port_indices)
 
-        if self.agent_relay_discard_mode or self.dhcpv4_disable_flag:
+        if self.agent_relay_mode == "discard" or self.dhcpv4_disable_flag or self.max_hop_count == self.MAX_HOP_COUNT:
             # Expected result: No packet sent
             num_expected_packets = 0
 

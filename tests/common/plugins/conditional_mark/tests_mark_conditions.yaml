@@ -481,6 +481,105 @@ decap/test_subnet_decap.py::test_vlan_subnet_decap:
       - "release in ['202012', '202205', '202305', '202311']"
 
 #######################################
+#####         dhcp_server       #####
+#######################################
+dhcp_server/test_dhcp_server.py::test_dhcp_server_port_based_assignment_single_ip_tc1[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server.py::test_dhcp_server_port_based_assignment_single_ip_tc2[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server.py::test_dhcp_server_port_based_assignment_single_ip_tc3[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server.py::test_dhcp_server_port_based_assignment_single_ip_tc4[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server.py::test_dhcp_server_port_based_assignment_range_ip[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server.py::test_dhcp_server_port_based_assigenment_single_ip_mac_move[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server.py::test_dhcp_server_port_based_assigenment_single_ip_mac_swap[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server.py::test_dhcp_server_port_based_customize_options[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server.py::test_dhcp_server_config_change_dhcp_interface[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server.py::test_dhcp_server_config_change_common[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server.py::test_dhcp_server_config_vlan_member_change[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server.py::test_dhcp_server_lease_config_change[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server.py::test_dhcp_server_config_vlan_intf_change[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server_multi_vlans.py::test_single_ip_assignment[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server_multi_vlans.py::test_range_ip_assignment[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_server/test_dhcp_server_stress.py::test_dhcp_server_with_multiple_dhcp_clients[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+#######################################
 #####         dhcp_relay        #####
 #######################################
 dhcp_relay/test_dhcp_counter_stress.py::test_dhcpcom_relay_counters_stress[discover]:
@@ -561,6 +660,42 @@ dhcp_relay/test_dhcp_relay.py::test_interface_binding:
     reason: "Skip test_interface_binding in old release version"
     conditions:
       - "release in ['201811', '201911', '202106']"
+
+dhcp_relay/test_dhcp_relay.py::test_dhcp_relay_default[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_relay/test_dhcp_relay.py::test_dhcp_relay_with_source_port_ip_in_relay_enabled[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_relay/test_dhcp_relay.py::test_dhcp_relay_after_link_flap[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_relay/test_dhcp_relay.py::test_dhcp_relay_start_with_uplinks_down[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_relay/test_dhcp_relay.py::test_dhcp_relay_unicast_mac[sonic-relay-agent]:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
+
+dhcp_relay/test_dhcpv4_relay.py:
+  skip:
+    reason: "Test skipped: sonic dhcpv4 is not supported in the DUT image version < 202511"
+    conditions:
+      - "release < '202511'"
 
 dhcp_relay/test_dhcp_relay_stress.py::test_dhcp_relay_restart_with_stress:
   skip:
