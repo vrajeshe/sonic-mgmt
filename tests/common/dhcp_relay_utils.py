@@ -180,7 +180,11 @@ def enable_sonic_dhcpv4_relay_agent(duthost, request):
     if "skip_config_dhcpv4_relay_agent" in request.keywords:
         yield
         return
-    dut_dhcp_relay_data = request.getfixturevalue("dut_dhcp_relay_data")
+
+    if "dut_dhcp_relay_data" in request.fixturenames:
+        dut_dhcp_relay_data = request.getfixturevalue("dut_dhcp_relay_data")
+    else :
+        dut_dhcp_relay_data = None
 
     try:
         if request.getfixturevalue("relay_agent") == "sonic-relay-agent":
@@ -233,18 +237,20 @@ def check_dhcpv4_socket_status(duthost, dut_dhcp_relay_data=None, process_and_so
 
 def sonic_dhcp_relay_config(duthost, dut_dhcp_relay_data, socket_check=True):
 
-    for dhcp_relay in dut_dhcp_relay_data:
-        vlan = str(dhcp_relay['downlink_vlan_iface']['name'])
-        dhcp_servers = ",".join(dhcp_relay['downlink_vlan_iface']['dhcp_server_addrs'])
-        duthost.shell(f'config dhcpv4_relay add --dhcpv4-servers {dhcp_servers} {vlan}')
+    if dut_dhcp_relay_data:
+        for dhcp_relay in dut_dhcp_relay_data:
+            vlan = str(dhcp_relay['downlink_vlan_iface']['name'])
+            dhcp_servers = ",".join(dhcp_relay['downlink_vlan_iface']['dhcp_server_addrs'])
+            duthost.shell(f'config dhcpv4_relay add --dhcpv4-servers {dhcp_servers} {vlan}')
 
-    if socket_check:
-        pytest_assert(wait_until(40, 5, 0, check_dhcpv4_socket_status, duthost, dut_dhcp_relay_data,
-                      "sonic_dhcpv4_socket_check"))
+        if socket_check:
+            pytest_assert(wait_until(40, 5, 0, check_dhcpv4_socket_status, duthost, dut_dhcp_relay_data,
+                          "sonic_dhcpv4_socket_check"))
 
 
 def sonic_dhcp_relay_unconfig(duthost, dut_dhcp_relay_data):
 
-    for dhcp_relay in dut_dhcp_relay_data:
-        vlan = str(dhcp_relay['downlink_vlan_iface']['name'])
-        duthost.shell(f'config dhcpv4_relay del {vlan}', module_ignore_errors=True)
+    if dut_dhcp_relay_data:
+        for dhcp_relay in dut_dhcp_relay_data:
+            vlan = str(dhcp_relay['downlink_vlan_iface']['name'])
+            duthost.shell(f'config dhcpv4_relay del {vlan}', module_ignore_errors=True)
