@@ -7,7 +7,7 @@ from tests.common.plugins.loganalyzer.loganalyzer import LogAnalyzer
 pytestmark = [
     pytest.mark.disable_route_check,
     pytest.mark.topology('any'),
-    pytest.mark.parametrize("teamd_mode", ["unified", "multi_process"])
+    pytest.mark.parametrize("teamd_mode", ["multi_process", "unified"]),
 ]
 
 LOG_EXPECT_PO_CLEANUP_RE = "cleanTeamProcesses: Sent SIGTERM to port channel.*{}.*"
