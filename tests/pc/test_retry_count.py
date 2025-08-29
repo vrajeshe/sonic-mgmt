@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 pytestmark = [
     pytest.mark.topology("t0", "t1", "t0-sonic"),
-    pytest.mark.parametrize("teamd_mode", ["unified", "multi_process"])
+    pytest.mark.parametrize("teamd_mode", ["multi_process", "unified"]),
 ]
 
 
@@ -80,8 +80,8 @@ def higher_retry_count_on_peers(request, duthost, nbrhosts, teamd_mode):
     if request.config.getoption("neighbor_type") != "sonic":
         pytest.skip("Only supported with SONiC neighbor")
 
-    if teamd_mode == "multi_process":
-        config_and_delete_multip_process(duthost, True)
+    if teamd_mode == "unified":
+        config_and_delete_unified_process(duthost, True)
 
     featureCheckResult = nbrhosts[list(nbrhosts.keys())[0]]['host'].shell(
             "sudo config portchannel retry-count get PortChannel1", module_ignore_errors=True)
@@ -104,8 +104,8 @@ def higher_retry_count_on_peers(request, duthost, nbrhosts, teamd_mode):
     pytest_assert(wait_until(90, 5, 0, verify_retry_count, [duthost], 3),
                   "Retry count on DUT has not been changed to 3.")
 
-    if teamd_mode == "multi_process":
-        config_and_delete_multip_process(duthost, False)
+    if teamd_mode == "unified":
+        config_and_delete_unified_process(duthost, False)
 
 
 @pytest.fixture(scope="function")
