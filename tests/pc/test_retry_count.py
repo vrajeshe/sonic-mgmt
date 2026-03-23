@@ -76,7 +76,6 @@ def verify_retry_count(hosts, expected_retry_count):
 
 
 @pytest.fixture(scope="function")
-<<<<<<< HEAD
 def higher_retry_count_on_peers(request, duthost, nbrhosts, team_mode):
     if request.config.getoption("neighbor_type") != "sonic":
         pytest.skip("Only supported with SONiC neighbor")
@@ -84,7 +83,7 @@ def higher_retry_count_on_peers(request, duthost, nbrhosts, team_mode):
     if teamd_mode == "unified":
         config_and_delete_unified_process(duthost, True)
 
-    featureCheckResult = nbrhosts[list(nbrhosts.keys())[0]]['host'].command(
+        featureCheckResult = nbrhosts[list(nbrhosts.keys())[0]]['host'].command(
 def higher_retry_count_on_peers(request, duthost, nbrhosts, teamd_mode):
     if request.config.getoption("neighbor_type") != "sonic":
         pytest.skip("Only supported with SONiC neighbor")

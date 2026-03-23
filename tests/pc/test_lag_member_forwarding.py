@@ -222,10 +222,6 @@ def test_lag_member_forwarding_packets(duthosts, enum_rand_one_per_hwsku_fronten
         )
     finally:
         duthost.shell('rm -f {}'.format(lag_member_file_dir))
-<<<<<<< HEAD
         if testcase == "multi_process":
             config_and_delete_multip_process(duthost, False)
         config_reload(duthost, config_source='config_db', ignore_loganalyzer=loganalyzer)
-=======
-        config_reload(duthost, config_source='config_db')
->>>>>>> 493b3143f (incremental)

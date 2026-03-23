@@ -1,6 +1,5 @@
 import pytest
 import logging
-import time
 from tests.common.fixtures.duthost_utils import stop_route_checker_on_duthost
 from tests.common.helpers.multi_thread_utils import SafeThreadPoolExecutor
 from tests.common.utilities import wait_until

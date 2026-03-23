@@ -3695,8 +3695,6 @@ def gnmi_connection(request, setup_connection):
     yield connection
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD
 class DualtorMuxPortSetupConfig(enum.Flag):
     """Dualtor mux port setup config."""
     DUALTOR_SKIP_SETUP_MUX_PORTS = enum.auto()
